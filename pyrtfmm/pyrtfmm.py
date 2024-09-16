@@ -61,40 +61,37 @@ p-energy2 : -1.377257796841e+03
 def usage():
     print(Markdown(desp))
     
-def parse(txt : str):
-    '''
-    return [[P,l2p,l2f,l2e],...] data sorted by P
-    '''
+def parse_comparison(label : str, txt : str, sort : bool) -> list:
     settings1 = re.findall(r'  P                    = (.*)', txt)
     settings2 = re.findall(r'  images               = (.*)', txt)
     
-    fvds = re.findall(r'FMM vs Direct.*\nL2  \(p\)  : (.*)L2  \(f\)  : (.*)L2  \(e\)  : (.*)\n',txt)
-    fves = re.findall(r'FMM vs Ewald.*\nL2  \(p\)  : (.*)L2  \(f\)  : (.*)L2  \(e\)  : (.*)\n',txt)
-    dves = re.findall(r'Direct vs Ewald.*\nL2  \(p\)  : (.*)L2  \(f\)  : (.*)L2  \(e\)  : (.*)\n',txt)
+    comparison = re.findall(f'{label}.*\nL2  \(p\)  : (.*)L2  \(f\)  : (.*)L2  \(e\)  : (.*)\n',txt)
 
     ps = [eval(fmm) for fmm in settings1]
     imgs = [eval(fmm) for fmm in settings2]
     
-    fvd_l2ps = [eval(res[0]) for res in fvds]
-    fvd_l2fs = [eval(res[1]) for res in fvds]
-    fvd_l2es = [eval(res[2]) for res in fvds]
+    l2ps = [eval(res[0]) for res in comparison]
+    l2fs = [eval(res[1]) for res in comparison]
+    l2es = [eval(res[2]) for res in comparison]
     
-    fve_l2ps = [eval(res[0]) for res in fves]
-    fve_l2fs = [eval(res[1]) for res in fves]
-    fve_l2es = [eval(res[2]) for res in fves]
+    data = [[p,i,l2p,l2f,l2e] for p,i,l2p,l2f,l2e in zip(ps,imgs,l2ps,l2fs,l2es)]
+    if sort:
+        data = sorted(data, key=lambda x: x[0])
+    return data
     
-    dve_l2ps = [eval(res[0]) for res in dves]
-    dve_l2fs = [eval(res[1]) for res in dves]
-    dve_l2es = [eval(res[2]) for res in dves]
+def parse(txt : str, sort = True) -> dict:
+    '''
+    return [[P,l2p,l2f,l2e],...] data sorted by P
+    '''
     
-    fvd_data = sorted([[p,i,l2p,l2f,l2e] for p,i,l2p,l2f,l2e in zip(ps,imgs,fvd_l2ps,fvd_l2fs,fvd_l2es)], key=lambda x: x[0])
-    fve_data = sorted([[p,i,l2p,l2f,l2e] for p,i,l2p,l2f,l2e in zip(ps,imgs,fve_l2ps,fve_l2fs,fve_l2es)], key=lambda x: x[0])
-    dve_data = sorted([[p,i,l2p,l2f,l2e] for p,i,l2p,l2f,l2e in zip(ps,imgs,dve_l2ps,dve_l2fs,dve_l2es)], key=lambda x: x[0])
+    fvd = parse_comparison('FMM vs Direct', txt, sort)
+    fve = parse_comparison('FMM vs Ewald', txt, sort)
+    dve = parse_comparison('Direct vs Ewald', txt, sort)
     
     return {
-        "fvd" : fvd_data, 
-        "fve" : fve_data, 
-        "dve" : dve_data
+        "fvd" : fvd, 
+        "fve" : fve, 
+        "dve" : dve
     }
 
 def make_table(data, title):
