@@ -65,24 +65,42 @@ def parse(txt : str):
     '''
     return [[P,l2p,l2f,l2e],...] data sorted by P
     '''
-    fmmdata = re.findall(r'  P                    = (.*)', txt)
-    data1 = re.findall(r'FMM vs Direct.*\nL2  \(p\)  : (.*)L2  \(f\)',txt)
-    data2 = re.findall(r'FMM vs Direct.*\n.*L2  \(f\)  : (.*)L2  \(e\)',txt)
-    data3 = re.findall(r'FMM vs Direct.*\n.*L2  \(e\)  : (.*)\n',txt)
-
-    ps = [eval(fmm) for fmm in fmmdata]
-    l2ps = [eval(e) for e in data1]
-    l2fs = [eval(e) for e in data2]
-    l2es = [eval(e) for e in data3]
+    settings1 = re.findall(r'  P                    = (.*)', txt)
+    settings2 = re.findall(r'  images               = (.*)', txt)
     
-    data = [[p,l2p,l2f,l2e] for p,l2p,l2f,l2e in zip(ps,l2ps,l2fs,l2es)]
-    data = sorted(data, key=lambda x: x[0])
-    
-    return data
+    fvds = re.findall(r'FMM vs Direct.*\nL2  \(p\)  : (.*)L2  \(f\)  : (.*)L2  \(e\)  : (.*)\n',txt)
+    fves = re.findall(r'FMM vs Ewald.*\nL2  \(p\)  : (.*)L2  \(f\)  : (.*)L2  \(e\)  : (.*)\n',txt)
+    dves = re.findall(r'Direct vs Ewald.*\nL2  \(p\)  : (.*)L2  \(f\)  : (.*)L2  \(e\)  : (.*)\n',txt)
 
-def make_table(data):
-    table = Table(title="",box=box.HORIZONTALS)
+    ps = [eval(fmm) for fmm in settings1]
+    imgs = [eval(fmm) for fmm in settings2]
+    
+    fvd_l2ps = [eval(res[0]) for res in fvds]
+    fvd_l2fs = [eval(res[1]) for res in fvds]
+    fvd_l2es = [eval(res[2]) for res in fvds]
+    
+    fve_l2ps = [eval(res[0]) for res in fves]
+    fve_l2fs = [eval(res[1]) for res in fves]
+    fve_l2es = [eval(res[2]) for res in fves]
+    
+    dve_l2ps = [eval(res[0]) for res in dves]
+    dve_l2fs = [eval(res[1]) for res in dves]
+    dve_l2es = [eval(res[2]) for res in dves]
+    
+    fvd_data = sorted([[p,i,l2p,l2f,l2e] for p,i,l2p,l2f,l2e in zip(ps,imgs,fvd_l2ps,fvd_l2fs,fvd_l2es)], key=lambda x: x[0])
+    fve_data = sorted([[p,i,l2p,l2f,l2e] for p,i,l2p,l2f,l2e in zip(ps,imgs,fve_l2ps,fve_l2fs,fve_l2es)], key=lambda x: x[0])
+    dve_data = sorted([[p,i,l2p,l2f,l2e] for p,i,l2p,l2f,l2e in zip(ps,imgs,dve_l2ps,dve_l2fs,dve_l2es)], key=lambda x: x[0])
+    
+    return {
+        "fvd" : fvd_data, 
+        "fve" : fve_data, 
+        "dve" : dve_data
+    }
+
+def make_table(data, title):
+    table = Table(title=title,box=box.HORIZONTALS)
     table.add_column("P", justify="center", style="yellow")
+    table.add_column("img", justify="center", style="yellow")
     table.add_column("l2p", justify="center", style="cyan")
     table.add_column("l2f", justify="center", style="cyan")
     table.add_column("l2e", justify="center", style="cyan")
